@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 //@desc Register A User
 //@route POST /users/register
@@ -39,14 +40,45 @@ const registerUser = asyncHandler(async (req, res) => {
 //@route POST /users/register
 //@access public
 const loginUser = asyncHandler(async (req, res) => {
-  res.json({ message: "Login User" });
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400);
+    throw new Error("All fields are mandatory");
+  }
+  //Check to see if user exists in the DB
+  const userAvailable = await User.findOne({ email });
+  //compare passwrod with hashed password
+  if (
+    userAvailable &&
+    (await bcrypt.compare(password, userAvailable.password))
+  ) {
+    const accessToken = jwt.sign(
+      {
+        //the payload contains the information we want the user to get access to:
+        user: {
+          username: userAvailable.username,
+          email: userAvailable.email,
+          id: userAvailable.id,
+        },
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "43200m" } //30 days
+    );
+    res.status(200).json({
+      accessToken,
+    });
+  } else {
+    res.status(401);
+    throw new Error("Email or Password is not valid");
+  }
 });
+
 
 //@desc Current User Info
 //@route GET /users/current
 //@access private
 const getCurrentUser = asyncHandler(async (req, res) => {
-  res.json({ message: "Show current user info" });
+  res.json(req.user);
 });
 
 module.exports = {
