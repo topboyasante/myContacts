@@ -15,6 +15,7 @@ app.use(express.json())
 
 //Middleware for API Routes
 app.use("/api/contacts",require("./routes/contactRoutes"))
+app.use("/api/users",require("./routes/userRoutes"))
 
 //Middleware for Error Handling
 app.use(errorHandler)
