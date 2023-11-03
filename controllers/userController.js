@@ -7,8 +7,8 @@ const jwt = require("jsonwebtoken");
 //@route POST /users/register
 //@access public
 const registerUser = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
+  const { fullname, username, email, password, confirm_password } = req.body;
+  if (!fullname || !username || !email || !password || !confirm_password) {
     res.status(400);
     throw new Error("All fields are mandatory");
   }
@@ -17,23 +17,30 @@ const registerUser = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("User already exists");
   }
+
+  //check if passwords are the same
+  if (password !== confirm_password) {
+    res.status(400);
+    throw new Error("The passwords are not the same");
+  }
   //Hashed Password
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({
     username,
     email,
+    fullname,
     password: hashedPassword,
   });
 
   if (user) {
-    res.status(201).json({ _id: user.id, email: user.email });
+    res
+      .status(201)
+      .json({ _id: user.id, email: user.email, fullname: user.fullname });
   } else {
     res.status(400);
     throw new Error("User Info provided is invalid");
   }
-
-  res.json({ message: "Register User" });
 });
 
 //@desc Log In A User
@@ -47,7 +54,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
   //Check to see if user exists in the DB
   const userAvailable = await User.findOne({ email });
-  //compare passwrod with hashed password
+  //compare password with hashed password
   if (
     userAvailable &&
     (await bcrypt.compare(password, userAvailable.password))
@@ -56,6 +63,7 @@ const loginUser = asyncHandler(async (req, res) => {
       {
         //the payload contains the information we want the user to get access to:
         user: {
+          fullname: userAvailable.fullname,
           username: userAvailable.username,
           email: userAvailable.email,
           id: userAvailable.id,
@@ -72,7 +80,6 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error("Email or Password is not valid");
   }
 });
-
 
 //@desc Current User Info
 //@route GET /users/current
