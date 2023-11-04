@@ -10,22 +10,33 @@ const getContacts = asyncHandler(async (req, res) => {
 });
 
 //@desc Get A Contact
-//@route GET /api/contacts/:id
+//@route GET /api/contacts/:name
 //@access private
 const getContact = asyncHandler(async (req, res) => {
-  const contact = await Contact.findById(req.params.id);
-  if (!contact) {
-    res.status(404);
-    throw new Error("Contact Not Found");
+  const { name } = req.params;
+
+  const query = { user_id: req.user.id };
+
+  if (name) {
+    // Add a partial name match to the query
+    query.name = { $regex: new RegExp(name, 'i') };
   }
-  res.status(200).json(contact);
+
+  const contacts = await Contact.find(query);
+
+  if (contacts.length === 0) {
+    res.status(404);
+    throw new Error("No contacts found matching the provided criteria");
+  }
+
+  res.status(200).json(contacts);
 });
+
 
 //@desc Create A Contact
 //@route POST /api/contacts/
 //@access private
 const createContact = asyncHandler(async (req, res) => {
-  console.log(req.body);
   const { name, email, phone_number } = req.body;
   if (!name || !email || !phone_number) {
     res.status(400);

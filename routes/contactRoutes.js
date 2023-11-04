@@ -14,7 +14,7 @@ router.use(validateToken) //validate all routes
 router.route("/").get(getContacts);
 //you can do come chaining (like this->) if two methods have the same route path : router.route("/").get(getContacts).post(createContact);
 
-router.route("/:id").get(getContact);
+router.route("/:name").get(getContact);
 
 router.route("/").post(createContact);
 
