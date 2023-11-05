@@ -17,7 +17,7 @@ router.route("/").get(getContacts);
 
 router.route("/:name").post(getContactByName);
 
-router.route("/:id").post(getContactById);
+router.route("/:id").get(getContactById);
 
 router.route("/").post(createContact);
 
