@@ -91,6 +91,70 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   res.json(req.user);
 });
 
+//@desc Edit A User
+//@route PUT /users/:id
+//@access private
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User Not Found");
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+  res.status(200).json(updatedUser);
+});
+
+//@desc Edit A Paassword
+//@route PUT /users/password/:id
+//@access private
+const updateUserPassword = asyncHandler(async (req, res) => {
+  const { prev_password, new_password, confirm_password } = req.body;
+  if (!prev_password || !new_password || !confirm_password) {
+    res.status(400);
+    throw new Error("All fields are mandatory");
+  }
+
+  //Find the account whose password we are changing:
+  const user = await User.findById(req.params.id);
+  //if that account does not exist
+  if (!user) {
+    res.status(400);
+    throw new Error("User does not exist");
+  }
+
+  //else check if the prev password provided is correct
+  if (user && (await bcrypt.compare(prev_password, user.password))) {
+    //check if the new password is the same as the old password
+    if (new_password !== prev_password) {
+      //now check if the new passwords are the same
+      if (new_password === confirm_password) {
+        //if its correct, change the password
+        const hashedPassword = await bcrypt.hash(req.body.new_password, 10);
+        const updatedUser = await User.findByIdAndUpdate(
+          req.params.id,
+          { password: hashedPassword },
+          {
+            new: true,
+          }
+        );
+        res.status(200).json(updatedUser);
+      } else {
+        res.status(400);
+        throw new Error("The new passwords provided are not the same.");
+      }
+    } else {
+      res.status(400);
+      throw new Error("You cannot use your old password as your new password.");
+    }
+  } else {
+    res.status(400);
+    throw new Error("The old password you provided is incorrect.");
+  }
+});
+
 //@desc Delete A User
 //@route delete /users/delete/:id
 //@access private
@@ -123,4 +187,6 @@ module.exports = {
   loginUser,
   getCurrentUser,
   deleteUser,
+  updateUserProfile,
+  updateUserPassword,
 };
