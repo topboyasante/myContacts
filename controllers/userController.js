@@ -15,7 +15,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const userAvailable = await User.findOne({
     $or: [{ username: username }, { email: email }],
   });
-  
+
   if (userAvailable) {
     res.status(400);
     throw new Error("User already exists");
@@ -91,8 +91,36 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   res.json(req.user);
 });
 
+//@desc Delete A User
+//@route delete /users/delete/:id
+//@access private
+const deleteUser = asyncHandler(async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Check if the user exists
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    // Delete the user
+    await User.deleteOne({ _id: userId });
+
+    res.status(200).json({ message: "Your account has been deleted!" });
+  } catch (error) {
+    res.status(500);
+    throw new Error(
+      "There was an error deleting your account: " + error.message
+    );
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
   getCurrentUser,
+  deleteUser,
 };
